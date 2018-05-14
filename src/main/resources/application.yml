@@ -1,0 +1,15 @@
+process:
+  ame-signal:
+    reporting:
+      columns:
+        Editor: user
+        Language: language
+        Category: category
+        Country: country
+        Task Creation Date/Time: createTime
+        Task ID: taskId
+        Claim Date: claimTime
+        Completed Date: _current_date
+google:
+  api:
+    credentials: client_secret.json
