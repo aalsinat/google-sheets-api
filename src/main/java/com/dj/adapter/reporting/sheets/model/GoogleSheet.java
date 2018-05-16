@@ -2,6 +2,7 @@ package com.dj.adapter.reporting.sheets.model;
 
 import com.dj.adapter.reporting.sheets.service.GoogleSheetsService;
 import com.google.api.services.sheets.v4.model.*;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -16,7 +17,7 @@ public class GoogleSheet {
 	 */
 	private static final GoogleSheet EMPTY = new GoogleSheet();
 	private static final Integer DEFAULT_HEADER_ROW = 1;
-
+	private static org.slf4j.Logger logger = LoggerFactory.getLogger(GoogleSheet.class);
 	/**
 	 * If non-null, the value; if null, indicates no value is present
 	 */
@@ -78,6 +79,7 @@ public class GoogleSheet {
 	 * @throws NullPointerException if value is null
 	 */
 	public static GoogleSheet of(Sheet value, GoogleSpreadsheet parent) {
+		logger.debug("A new instance of GoogleSheet is being created");
 		return new GoogleSheet(value, parent);
 	}
 
@@ -334,8 +336,8 @@ public class GoogleSheet {
 	 * Appends or updates data on a particular table. Information about columns will be taken
 	 * into consideration to update or create the row.
 	 *
-	 * @param row            columns and their and values to be updated or appended into the table
-	 * @param keyColumns     columns that uniquely establish the identity of a row
+	 * @param row        columns and their and values to be updated or appended into the table
+	 * @param keyColumns columns that uniquely establish the identity of a row
 	 * @return
 	 */
 	public ValueRange saveRow(Map<String, Object> row, List<String> keyColumns) throws IOException {
@@ -346,8 +348,8 @@ public class GoogleSheet {
 	 * Updates data on a particular table. Information about columns will be taken
 	 * into consideration to update the row.
 	 *
-	 * @param row            columns and their and values to be updated on the table
-	 * @param keyColumns     columns that uniquely establish the identity of a row
+	 * @param row        columns and their and values to be updated on the table
+	 * @param keyColumns columns that uniquely establish the identity of a row
 	 * @return
 	 */
 	public ValueRange updateRow(Map<String, Object> row, List<String> keyColumns) throws IOException {
