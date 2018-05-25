@@ -10,6 +10,29 @@ process:
         Task ID: taskId
         Claim Date: claimTime
         Completed Date: _current_date
+      header:
+        startRowIndex: 0
+        startColumnIndex: 0
 google:
   api:
     credentials: client_secret.json
+  reporting:
+    retry-policy:
+      max-retries: 3
+      fixed-backoff: 1000
+    first-sheet:
+      spreadsheetId: 1A-C_yPt34w3fX2ZUxveH2qpPoiCVDQ7L7a9MdwXvCBY
+      sheetName: Class Data
+      headerOffSet:
+          start-row-index: 1
+          end-row-index: 1
+          start-column-index: 0
+      columns:
+        Editor: user
+        Language: language
+        Category: category
+        Country: country
+        Task Creation Date/Time: createTime
+        Task ID: taskId
+        Claim Date: claimTime
+        Completed Date: _current_date

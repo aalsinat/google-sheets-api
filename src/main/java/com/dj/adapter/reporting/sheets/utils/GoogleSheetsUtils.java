@@ -1,11 +1,8 @@
 package com.dj.adapter.reporting.sheets.utils;
 
-import com.dj.adapter.reporting.sheets.model.MergedValueRanges;
 import com.google.api.services.sheets.v4.model.BatchGetValuesResponse;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -50,4 +47,18 @@ public final class GoogleSheetsUtils {
 	public static <T, E> E getColumnValueForRow(Map<T, E> row, T columnName, Supplier<E> defaultValue) {
 		return row.containsKey(columnName) ? row.get(columnName) : defaultValue.get();
 	}
+
+	/**
+	 * Converts a list of objects to a map where the value is object's postion on the list
+	 *
+	 * @param items list of objects to be transformed
+	 * @return a map for postions in the list
+	 */
+	public static Map<String, Integer> listToMap(List<Object> items, Integer offset) {
+		final Map<String, Integer> result = new HashMap<>();
+		items.stream()
+		     .forEach(item -> result.put(String.valueOf(item), items.indexOf(item) + offset));
+		return result;
+	}
+
 }

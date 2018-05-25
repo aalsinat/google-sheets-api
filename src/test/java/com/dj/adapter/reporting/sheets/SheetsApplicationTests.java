@@ -1,41 +1,39 @@
 package com.dj.adapter.reporting.sheets;
 
-import com.dj.adapter.reporting.sheets.configuration.ReportingConfiguration;
-import com.dj.adapter.reporting.sheets.model.GoogleSheet;
-import com.dj.adapter.reporting.sheets.model.GoogleSpreadsheet;
-import com.dj.adapter.reporting.sheets.service.GoogleSheetsService;
-import com.dj.adapter.reporting.sheets.service.ServiceFactory;
+import com.dj.adapter.reporting.sheets.domain.GoogleSheet;
+import com.dj.adapter.reporting.sheets.domain.GoogleSheetsRepositoryFactory;
+import com.dj.adapter.reporting.sheets.domain.GoogleSpreadsheet;
+import com.dj.adapter.reporting.sheets.domain.GoogleSheetsRepository;
+import com.dj.adapter.reporting.sheets.service.SheetsReportingService;
+import com.dj.adapter.reporting.sheets.utils.A1NotationHelper;
+import com.google.api.client.json.GenericJson;
+import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
-import static com.dj.adapter.reporting.sheets.utils.GoogleSheetsUtils.getColumnValueForRow;
-import static com.dj.adapter.reporting.sheets.utils.GoogleSheetsUtils.getHeaderColumnNameByPosition;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-//@RunWith(SpringRunner.class)
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {ReportingConfiguration.class})
-//@SpringBootTest
+@RunWith(SpringRunner.class)
+@SpringBootTest
 public class SheetsApplicationTests {
 	final String spreadsheetId = "1A-C_yPt34w3fX2ZUxveH2qpPoiCVDQ7L7a9MdwXvCBY";
-
 	@Autowired
-	private ServiceFactory serviceFactory;
-
+	SheetsReportingService service;
 	@Autowired
-	private GoogleSheetsService sheetsService;
-
+	private GoogleSheetsRepositoryFactory repositoryFactory;
+	@Autowired
+	private GoogleSheetsRepository repository;
 	/*
 	 * Mocking data structures
 	 */
@@ -51,10 +49,11 @@ public class SheetsApplicationTests {
 
 	@Before
 	public void setUp() throws IOException {
-
-		this.spreadsheet = sheetsService.getSpreadSheetById(spreadsheetId);
-		this.sheet = spreadsheet.getSheetByName("Class Data");
-		this.sheet.setHeaderRow(2);
+		this.spreadsheet = service.getSpreadSheetById(spreadsheetId);
+		this.sheet = service.getSheetByName(spreadsheetId, "Class Data");
+		this.sheet.setHeaderOffset(new GridRange().setStartRowIndex(1)
+		                                          .setStartColumnIndex(0)
+		                                          .setEndRowIndex(1));
 
 		// Header for testing definition
 		header.put("Id", 0);
@@ -104,11 +103,11 @@ public class SheetsApplicationTests {
 
 	@Test
 	public void sheetsServicesIsCreatedAndInjected() {
-		assertNotNull(serviceFactory);
-		assertNotNull("A new Sheets service has been created", sheetsService);
+		assertNotNull(repositoryFactory);
+		assertNotNull("A new Sheets service has been created", repository);
 		assertTrue("Service has right application name",
-		           sheetsService.get()
-		                        .getApplicationName() == "FlowIT Reporting");
+		           repository.get()
+		                     .getApplicationName() == "FlowIT Reporting");
 	}
 
 	@Test
@@ -116,6 +115,7 @@ public class SheetsApplicationTests {
 		assertTrue("A new spreadsheet is instantiated", this.spreadsheet.isPresent());
 		assertTrue("A sheet with 'Class Data' name was found", this.sheet.isPresent());
 		assertTrue("A search criteria has been created", this.searchCriteria != null && !this.searchCriteria.isEmpty());
+		System.out.println();
 	}
 
 	/**
@@ -134,9 +134,9 @@ public class SheetsApplicationTests {
 	 */
 	@Test
 	public void googleSheetCheckIdProperty() {
-		final Optional<Integer> sheetId = this.sheet.getSheetId();
-		assertTrue("Found sheet has an Id", sheetId.isPresent());
-		assertTrue("Sheet identifier must be non-negative", sheetId.get() >= 0);
+		final Integer sheetId = this.sheet.getSheetId();
+		assertNotNull("Found sheet has an Id", sheetId);
+		assertTrue("Sheet identifier must be non-negative", sheetId >= 0);
 	}
 
 	/**
@@ -165,9 +165,14 @@ public class SheetsApplicationTests {
 	 */
 	@Test
 	public void googleSheetCheckAppendOperation() throws IOException {
-		Optional<Integer> rowCount = this.sheet.getRowCount();
-		final ValueRange appended = this.sheet.appendRow(this.rowToBeAppended);
-		System.out.println(String.format("Inserted values: %s", appended.toPrettyString()));
+		final CompletableFuture<ValueRange> appended = this.sheet.appendRow(this.rowToBeAppended);
+		appended.thenAccept(valueRange -> {
+			try {
+				System.out.println(String.format("Inserted values: %s", valueRange.toPrettyString()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
 	}
 
 	/**
@@ -178,7 +183,7 @@ public class SheetsApplicationTests {
 		final Map<String, Object> searchCriteria = new HashMap<>();
 		searchCriteria.put("Student Name", "Carrie");
 		searchCriteria.put("Gender", "Female");
-		final Optional<Integer> rowIdByColumnValues = this.sheet.findRowIdByColumnValues(searchCriteria);
+		final Optional<Integer> rowIdByColumnValues = this.sheet.getRowIdByColumnValues(searchCriteria);
 		assertTrue("Searched criteria is present.", rowIdByColumnValues.isPresent());
 		System.out.println(String.format("Search value is at row number %d", rowIdByColumnValues.get()));
 	}
@@ -187,25 +192,23 @@ public class SheetsApplicationTests {
 	 * Check that save operation updates a row if already exists, otherwise append the row at the end
 	 */
 	@Test
-	public void whenRowExistsThenSaveActuallyUpdatesValues() throws IOException {
+	public void whenRowExistsThenSaveActuallyUpdatesValues() throws IOException{
 		final List<String> keyColumns = Arrays.asList("Student Name", "Gender", "Major");
-		Integer oldIdValue = Integer.valueOf(this.rowToBeUpdated.get("Id")
-		                                                        .toString());
-		this.rowToBeUpdated.put("Id", ++oldIdValue);
-		final ValueRange saved = this.sheet.saveRow(this.rowToBeUpdated, keyColumns);
+		final Integer oldIdValue = Integer.valueOf(this.rowToBeUpdated.get("Id")
+		                                                              .toString()) + 1000;
+		this.rowToBeUpdated.put("Id", oldIdValue);
+		CompletableFuture<ValueRange> saved = this.sheet.saveRow(this.rowToBeUpdated, keyColumns);
+		saved.thenAccept(value -> System.out.println(value.getValues().toString()))
+		     .thenRun(() -> {
+			System.out.println("Completable Future completed");
+			assertEquals("Save actually updates an existing row", 1, 0);
 
-		// Create search criteria
-		Map<String, Object> searchCriteria = new HashMap<>();
-		keyColumns.stream()
-		          .forEach(key -> searchCriteria.put(key, this.rowToBeUpdated.get(key)));
+		});
 
-		final Optional<Integer> searchedRowId = this.sheet.findRowIdByColumnValues(searchCriteria);
-		final Optional<List<Object>> updatedRow = this.sheet.readRow(searchedRowId.get());
-
-		assertTrue("Save actually updates an existing row",
-		           oldIdValue == Integer.valueOf(updatedRow.get()
-		                                                   .get(0)
-		                                                   .toString()));
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
-
 }

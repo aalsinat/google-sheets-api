@@ -1,35 +1,41 @@
-package com.dj.adapter.reporting.sheets.service;
+package com.dj.adapter.reporting.sheets.domain;
 
-import com.dj.adapter.reporting.sheets.model.GoogleSpreadsheet;
+import com.dj.adapter.reporting.sheets.retry.AsyncRetryExecutor;
+import com.dj.adapter.reporting.sheets.retry.RetryExecutor;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.BatchGetValuesResponse;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 
-public class GoogleSheetsService {
-	/**
-	 * Common instance for {@code empty()}.
-	 */
-	private static final GoogleSheetsService EMPTY = new GoogleSheetsService();
-
+public class GoogleSheetsRepository {
+	public static Logger logger = LoggerFactory.getLogger(GoogleSheetsRepository.class);
 	/**
 	 * If non-null, the value; if null, indicates no value is present
 	 */
 	private static Sheets value;
+	private ScheduledExecutorService scheduler;
+	private RetryExecutor executor;
 
 	/**
 	 * Constructs an empty instance.
-	 *
-	 * @implNote Generally only one empty instance, {@link GoogleSheetsService#EMPTY},
-	 * should exist per VM.
-	 */
-	private GoogleSheetsService() {
+	 **/
+	public GoogleSheetsRepository() {
 		this.value = null;
+		this.scheduler = Executors.newSingleThreadScheduledExecutor();
+		executor = new AsyncRetryExecutor(scheduler).retryOn(IOException.class)
+		                                            .withFixedBackoff(200)
+		                                            .withFixedRate()
+		                                            .withMaxRetries(3);
 	}
 
 	/**
@@ -38,46 +44,9 @@ public class GoogleSheetsService {
 	 * @param value the non-null value to be present
 	 * @throws NullPointerException if value is null
 	 */
-	private GoogleSheetsService(Sheets value) {
+	public GoogleSheetsRepository(Sheets value) {
+		this();
 		this.value = Objects.requireNonNull(value);
-	}
-
-	/**
-	 * Returns an empty {@code GoogleSheetsService} instance.  No value is present for this
-	 * GoogleSheetsService.
-	 *
-	 * @return an empty {@code GoogleSheetsService}
-	 * @apiNote Though it may be tempting to do so, avoid testing if an object
-	 * is empty by comparing with {@code ==} against instances returned by
-	 * {@code Option.empty()}. There is no guarantee that it is a singleton.
-	 * Instead, use {@link #isPresent()}.
-	 */
-	public static GoogleSheetsService empty() {
-		GoogleSheetsService t = EMPTY;
-		return t;
-	}
-
-	/**
-	 * Returns an {@code GoogleSheetsService} with the specified present non-null value.
-	 *
-	 * @param value the value to be present, which must be non-null
-	 * @return an {@code GoogleSheetsService} with the value present
-	 * @throws NullPointerException if value is null
-	 */
-	public static GoogleSheetsService of(Sheets value) {
-		return new GoogleSheetsService(value);
-	}
-
-	/**
-	 * Returns an {@code GoogleSheetsService} describing the specified value, if non-null,
-	 * otherwise returns an empty {@code GoogleSheetsService}.
-	 *
-	 * @param value the possibly-null value to describe
-	 * @return an {@code GoogleSheetsService} with a present value if the specified value
-	 * is non-null, otherwise an empty {@code GoogleSheetsService}
-	 */
-	public static GoogleSheetsService ofNullable(Sheets value) {
-		return value == null ? empty() : of(value);
 	}
 
 	/**
@@ -87,7 +56,7 @@ public class GoogleSheetsService {
 	 * @param ranges        ranges to be retrieved
 	 * @return values for all ranges
 	 */
-	public static BatchGetValuesResponse getMultipleRanges(String spreadSheetId, List<String> ranges) throws IOException {
+	public BatchGetValuesResponse getMultipleRanges(String spreadSheetId, List<String> ranges) throws IOException {
 		return value.spreadsheets()
 		            .values()
 		            .batchGet(spreadSheetId)
@@ -102,7 +71,18 @@ public class GoogleSheetsService {
 	 * @param range         range to be retrieved
 	 * @return value of the range
 	 */
-	public static ValueRange getRange(String spreadSheetId, String range) throws IOException {
+	public ValueRange getRange(String spreadSheetId, String range) throws IOException {
+		ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+		RetryExecutor executor = new AsyncRetryExecutor(scheduler).retryOn(IOException.class)
+		                                                          .withFixedBackoff(200)
+		                                                          .withFixedRate()
+		                                                          .withMaxRetries(3);
+		final CompletableFuture<ValueRange> withRetry = executor.getWithRetry(context -> value.spreadsheets()
+		                                                                                      .values()
+		                                                                                      .get(spreadSheetId, range)
+		                                                                                      .execute());
+		withRetry.thenAccept(valueRange -> logger.debug("Retrieved values: " + valueRange.toString()));
+
 		return value.spreadsheets()
 		            .values()
 		            .get(spreadSheetId, range)
@@ -118,9 +98,9 @@ public class GoogleSheetsService {
 	 * @param row           values of the cells of the row
 	 * @return an append operation ready to be executed
 	 */
-	public static Sheets.Spreadsheets.Values.Append append(String spreadsheetId,
-	                                                       String range,
-	                                                       ValueRange row) throws IOException {
+	public Sheets.Spreadsheets.Values.Append append(String spreadsheetId,
+	                                                String range,
+	                                                ValueRange row) throws IOException {
 		return value.spreadsheets()
 		            .values()
 		            .append(spreadsheetId, range, row);
@@ -134,21 +114,21 @@ public class GoogleSheetsService {
 	 * @param row           value of the cells of the row
 	 * @return an update operation ready to be executed
 	 */
-	public static Sheets.Spreadsheets.Values.Update update(String spreadsheetId,
-	                                                       String range,
-	                                                       ValueRange row) throws IOException {
+	public Sheets.Spreadsheets.Values.Update update(String spreadsheetId,
+	                                                String range,
+	                                                ValueRange row) throws IOException {
 		return value.spreadsheets()
 		            .values()
 		            .update(spreadsheetId, range, row);
 	}
 
 	/**
-	 * If a value is present in this {@code GoogleSheetsService}, returns the value,
+	 * If a value is present in this {@code GoogleSheetsRepository}, returns the value,
 	 * otherwise throws {@code NoSuchElementException}.
 	 *
-	 * @return the non-null value held by this {@code GoogleSheetsService}
+	 * @return the non-null value held by this {@code GoogleSheetsRepository}
 	 * @throws NoSuchElementException if there is no value present
-	 * @see GoogleSheetsService#isPresent()
+	 * @see GoogleSheetsRepository#isPresent()
 	 */
 	public Sheets get() {
 		if (value == null) {
@@ -175,8 +155,8 @@ public class GoogleSheetsService {
 	 * @throws IOException
 	 */
 	public GoogleSpreadsheet getSpreadSheetById(String spreadSheetId) throws IOException {
-		return GoogleSpreadsheet.ofNullable(value.spreadsheets()
-		                                         .get(spreadSheetId)
-		                                         .execute());
+		return new GoogleSpreadsheet(value.spreadsheets()
+		                                  .get(spreadSheetId)
+		                                  .execute(), this);
 	}
 }
