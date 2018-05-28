@@ -1,12 +1,7 @@
 package com.dj.adapter.reporting.sheets;
 
-import com.dj.adapter.reporting.sheets.domain.GoogleSheet;
-import com.dj.adapter.reporting.sheets.domain.GoogleSheetsRepositoryFactory;
-import com.dj.adapter.reporting.sheets.domain.GoogleSpreadsheet;
-import com.dj.adapter.reporting.sheets.domain.GoogleSheetsRepository;
+import com.dj.adapter.reporting.sheets.domain.*;
 import com.dj.adapter.reporting.sheets.service.SheetsReportingService;
-import com.dj.adapter.reporting.sheets.utils.A1NotationHelper;
-import com.google.api.client.json.GenericJson;
 import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import org.junit.Before;
@@ -14,13 +9,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 
@@ -46,6 +41,38 @@ public class SheetsApplicationTests {
 
 	private GoogleSpreadsheet spreadsheet;
 	private GoogleSheet sheet;
+
+	/**
+	 * Method for formatting Date variables coming from task request
+	 */
+	private static Object dateToStringFormat(String field, Object value) {
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+		if (value == null) {
+			return null;
+		}
+		if (value instanceof Date) {
+			return df.format((Date) value);
+		} else {
+			return value.toString();
+		}
+	}
+
+	/**
+	 * Method for formatting meta variables coming from task request
+	 */
+	private static Object metaVariablesFormat(String field, Object value) {
+		if ("_current_date".equals(field)) {
+			return Calendar.getInstance()
+			               .getTime();
+		} else {
+			return value;
+		}
+	}
+
+	private static Object checkForNullValues(String field, Object value) {
+		return value == null ? "" : value;
+	}
+
 
 	@Before
 	public void setUp() throws IOException {
@@ -105,9 +132,10 @@ public class SheetsApplicationTests {
 	public void sheetsServicesIsCreatedAndInjected() {
 		assertNotNull(repositoryFactory);
 		assertNotNull("A new Sheets service has been created", repository);
-		assertTrue("Service has right application name",
-		           repository.get()
-		                     .getApplicationName() == "FlowIT Reporting");
+		assertTrue(
+				"Service has right application name",
+				repository.get()
+				          .getApplicationName() == "FlowIT Reporting");
 	}
 
 	@Test
@@ -192,18 +220,19 @@ public class SheetsApplicationTests {
 	 * Check that save operation updates a row if already exists, otherwise append the row at the end
 	 */
 	@Test
-	public void whenRowExistsThenSaveActuallyUpdatesValues() throws IOException{
+	public void whenRowExistsThenSaveActuallyUpdatesValues() throws IOException {
 		final List<String> keyColumns = Arrays.asList("Student Name", "Gender", "Major");
 		final Integer oldIdValue = Integer.valueOf(this.rowToBeUpdated.get("Id")
 		                                                              .toString()) + 1000;
 		this.rowToBeUpdated.put("Id", oldIdValue);
 		CompletableFuture<ValueRange> saved = this.sheet.saveRow(this.rowToBeUpdated, keyColumns);
-		saved.thenAccept(value -> System.out.println(value.getValues().toString()))
+		saved.thenAccept(value -> System.out.println(value.getValues()
+		                                                  .toString()))
 		     .thenRun(() -> {
-			System.out.println("Completable Future completed");
-			assertEquals("Save actually updates an existing row", 1, 0);
+			     System.out.println("Completable Future completed");
+			     assertEquals("Save actually updates an existing row", 1, 0);
 
-		});
+		     });
 
 		try {
 			Thread.sleep(10000);
@@ -211,4 +240,29 @@ public class SheetsApplicationTests {
 			e.printStackTrace();
 		}
 	}
+
+	@Test
+	public void checkValidationAndFormattingPolicies() {
+		final FormattingPolicy formattingPolicy = new FormattingPolicy().applyFormat(
+				SheetsApplicationTests::metaVariablesFormat,
+				SheetsApplicationTests::dateToStringFormat);
+
+		ValidationPolicy validationPolicy =
+				new ValidationPolicy().applyValidation(SheetsApplicationTests::checkForNullValues);
+
+		CellBuilder cellBuilder = new CellBuilder(formattingPolicy, validationPolicy);
+
+		Cell cellOne = cellBuilder.create(
+				"Test",
+				Calendar.getInstance()
+				        .getTime());
+
+		Cell cellTwo = cellBuilder.create("_current_date", "Whatever");
+
+		assertTrue(cellOne.getValue()
+		                  .getClass()
+		                  .getName()
+		                  .equals("java.lang.String"));
+	}
+
 }
