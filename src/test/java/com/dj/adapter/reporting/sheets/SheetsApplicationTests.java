@@ -62,8 +62,7 @@ public class SheetsApplicationTests {
 	 */
 	private static Object metaVariablesFormat(String field, Object value) {
 		if ("_current_date".equals(field)) {
-			return Calendar.getInstance()
-			               .getTime();
+			return Calendar.getInstance().getTime();
 		} else {
 			return value;
 		}
@@ -73,14 +72,23 @@ public class SheetsApplicationTests {
 		return value == null ? "" : value;
 	}
 
+	/**
+	 * Method that check the maximum length allowed for a cell
+	 */
+	public static Object checkMaximumLength(String field, Object value) {
+		if ((value instanceof String) && ((String) value).length() > 50000) {
+			return ((String) value).substring(0, 49999);
+		} else {
+			return value;
+		}
+	}
+
 
 	@Before
 	public void setUp() throws IOException {
 		this.spreadsheet = service.getSpreadSheetById(spreadsheetId);
 		this.sheet = service.getSheetByName(spreadsheetId, "Class Data");
-		this.sheet.setHeaderOffset(new GridRange().setStartRowIndex(1)
-		                                          .setStartColumnIndex(0)
-		                                          .setEndRowIndex(1));
+		this.sheet.setHeaderOffset(new GridRange().setStartRowIndex(1).setStartColumnIndex(0).setEndRowIndex(1));
 
 		// Header for testing definition
 		header.put("Id", 0);
@@ -132,10 +140,7 @@ public class SheetsApplicationTests {
 	public void sheetsServicesIsCreatedAndInjected() {
 		assertNotNull(repositoryFactory);
 		assertNotNull("A new Sheets service has been created", repository);
-		assertTrue(
-				"Service has right application name",
-				repository.get()
-				          .getApplicationName() == "FlowIT Reporting");
+		assertTrue("Service has right application name", repository.get().getApplicationName() == "FlowIT Reporting");
 	}
 
 	@Test
@@ -222,17 +227,14 @@ public class SheetsApplicationTests {
 	@Test
 	public void whenRowExistsThenSaveActuallyUpdatesValues() throws IOException {
 		final List<String> keyColumns = Arrays.asList("Student Name", "Gender", "Major");
-		final Integer oldIdValue = Integer.valueOf(this.rowToBeUpdated.get("Id")
-		                                                              .toString()) + 1000;
+		final Integer oldIdValue = Integer.valueOf(this.rowToBeUpdated.get("Id").toString()) + 1000;
 		this.rowToBeUpdated.put("Id", oldIdValue);
 		CompletableFuture<ValueRange> saved = this.sheet.saveRow(this.rowToBeUpdated, keyColumns);
-		saved.thenAccept(value -> System.out.println(value.getValues()
-		                                                  .toString()))
-		     .thenRun(() -> {
-			     System.out.println("Completable Future completed");
-			     assertEquals("Save actually updates an existing row", 1, 0);
+		saved.thenAccept(value -> System.out.println(value.getValues().toString())).thenRun(() -> {
+			System.out.println("Completable Future completed");
+			assertEquals("Save actually updates an existing row", 1, 0);
 
-		     });
+		});
 
 		try {
 			Thread.sleep(10000);
@@ -243,26 +245,19 @@ public class SheetsApplicationTests {
 
 	@Test
 	public void checkValidationAndFormattingPolicies() {
-		final FormattingPolicy formattingPolicy = new FormattingPolicy().applyFormat(
-				SheetsApplicationTests::metaVariablesFormat,
-				SheetsApplicationTests::dateToStringFormat);
+		final FormattingPolicy formattingPolicy = new FormattingPolicy()
+				.applyFormat(SheetsApplicationTests::metaVariablesFormat, SheetsApplicationTests::dateToStringFormat);
 
-		ValidationPolicy validationPolicy =
-				new ValidationPolicy().applyValidation(SheetsApplicationTests::checkForNullValues);
+		ValidationPolicy validationPolicy = new ValidationPolicy()
+				.applyValidation(SheetsApplicationTests::checkForNullValues, SheetsApplicationTests::checkMaximumLength);
 
 		CellBuilder cellBuilder = new CellBuilder(formattingPolicy, validationPolicy);
 
-		Cell cellOne = cellBuilder.create(
-				"Test",
-				Calendar.getInstance()
-				        .getTime());
+		Cell cellOne = cellBuilder.create("Test", Calendar.getInstance().getTime());
 
 		Cell cellTwo = cellBuilder.create("_current_date", "Whatever");
 
-		assertTrue(cellOne.getValue()
-		                  .getClass()
-		                  .getName()
-		                  .equals("java.lang.String"));
+		assertTrue(cellOne.getValue().getClass().getName().equals("java.lang.String"));
 	}
 
 }
