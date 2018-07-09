@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "dj-ds-workflow-nonprod",
+  "private_key_id": "7f7d936fff7333ce6ce0a6d4fabb3227c0869494",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDPgq4xMsyRDZfm\nwWCxDXBa9vJj19UIWnUrXdtoWQu7KXDQXQYC01HsxJbOsuNmby+j6icYDC5wMEUe\nxEQWA5JhC1EPrQP4dUBUosW+OjXlM1CwYK8iQqT8i5HOhSdOJIDRmhFb14BVZLIB\njiC3Rt8xkYBqao+x783eQfu71xwAd/V4NnIBohZgfaiPXqpbJytvatXFfTYOvNVB\nsnVl9LZ79VNBPo7Q8lSrS8GiTK9BJfoezTrTgVjYbGZBdL/bn51hT0CElhbOerRO\nQnW7kVOf+2suDXk3X7oK3PpeuzqnXzgNDs9AmEVu/4jsoJN+B6abjW1apKmTeY1L\nkj6eytxLAgMBAAECggEAYMP+uOCIdmfRWwD4NvgeWbzogVindfLAys1EwF8t0kRb\n4D5QzEaA4Jk3/gF7e0wD+jr5qgQcL6LCyLsbSOy3eNuPHHFA9b6vlgglkDSS52PL\nj8Q2RxKu3zmyb4y2LIFnNNbUm3Bd3vRK8eC2LuE0uWexa25vvbkm1isM2aZQ34I5\nSKmbmcnRxfxOTvnsJ+gei0p6FkzUaxiwqHfykoKTKKV6BGVuub2zGKoIX6SefoB6\nzAfqD11BenbzMuXvkhAxQWs+bGt/1iBP1VmAOdc6OJ98I2iieD5J4v61KTeqlOpj\nMRzFPKxVVrmann33RJRWCof/X+5cUGfTanfhqWUdkQKBgQD7UjPBfFRRMCTSbBHB\ndjqYpiz7Ix8BIpR283PUU+TDXHEiOcsMtktGt9P5pbPrcZoAlpDD8jN38HmG737i\nWVo6dcrMP02QAVu5XZZfRVubY636LzOrkFoRA0VD5EBiRsJPl2RDz4tvhmDFqmaN\necSZ8dv8S6RGskMlDGOR0o21CQKBgQDTX60x4Oyr3iVZ01Ffl+XtSM9e5287A1F9\n2dZME6tdfQuPx2Y2oPGvDGmf0JgTrE5nUBKp95muNnFuIJIAuXePYv+RVQpekBIJ\n4OvWgLxMjfG10+FaC/i75D8T537b/cKG4BnIwVgkVKvrbJME+1PKDXNnl/IirKOm\nLFc1bXvPswKBgA/ZZkQseBDKrXfLsu71asqXqDyKQXlL2fsKbWKVi9a6LLRQ2rpJ\ngMPL8gVLauZNOr4QwL5qts44jyFwVxslMWiAZzKsR1Lukv9EpKgLcrSA+8bMVUDb\nkKKEB0k5ysmn1rc4P+162DtHSTEOBvujEz/2Hb5ycsC2mz9p4ZmfoqopAoGBAKsm\ny4yZvcmkhMXpD/jBfBHYZOFJsI0uMKwg2R6cxqNafyQapy8QvuGowVYAh0NWv91z\nvskVjcC8oLg1c0NW6fKWjK3XGCBds91/3DbB4rZyMQez2sMY8nzhYhnx1oy3Ou4P\nQ5GEzKQOU267aYgdIUl3/rwhEpT1CUWinbLLRfd1AoGBAIJmx0dCipWimGTP9+9D\nLxkX9pPUBDMU4oDtIuajK5H/Y/6G5Zq9IfqHg6c5Fl+WA5/Cd3OctddrpqTw4WH6\n32d44hron3U6MGKLil8pWDRLQvPNN56JuX0XZLmP6i26fbRO7oa02NNMAGXMedeG\nx5DUZKpgG6p5nPCUcqb9SWfD\n-----END PRIVATE KEY-----\n",
+  "client_email": "dj-ds-bpm-int-service@dj-ds-workflow-nonprod.iam.gserviceaccount.com",
+  "client_id": "100133179157730616141",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dj-ds-bpm-int-service%40dj-ds-workflow-nonprod.iam.gserviceaccount.com"
+}

@@ -1,5 +1,84 @@
+server:
+    port: 9080
+
+#flowable:
+#  database:
+#    url: jdbc:mysql://flowable.cpfht8s436ql.us-east-1.rds.amazonaws.com:3306/flowable?characterEncoding=UTF-8
+#    username: root
+#    password: passP455
+
+flowable:
+  database:
+    url: jdbc:mysql://localhost:3306/flowable?characterEncoding=UTF-8&useSSL=false
+    username: flowable
+    password: flowable
+
+#djadapter:
+#  base_entry_point: http://bpm.mesmercat.com:8080/flowable-rest
+#  process_id: process:21:95043
+#  business_key: OFAC BusinessKey
+#  process_id_ame: process:7:25398
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:mysql://localhost:3306/flowable?characterEncoding=UTF-8&useSSL=false
+    username: flowable
+    password: flowable
+#    url: jdbc:mysql://flowable.cpfht8s436ql.us-east-1.rds.amazonaws.com:3306/flowable?characterEncoding=UTF-8
+#    username: root
+#    password: passP455
+
+flowable_rest:
+  baseUrl: http://localhost:8080/flowable-rest/service/
+#  baseUrl: https://bpm.datamgmt.int.pib.dowjones.io/flowable-rest/service/
+
+google_monitoring:
+  active: false
+  sheet_name: Sheet1
+  query_reporting:
+    ame:
+      # Pending now UAT
+      daily_tasks_spreadsheet_id: 1p2EygMsClNOgGSZv-BVhX04uFMe5KBn4ExC0U6LTvT4
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+  file: djadapter.log
+
+google:
+  #pkey_path: /google/DJ-Adapter-f0b67bbc85ac.json
+  #pkey_path: /google/DJ-Adapter-monitoring-2192041522d9.json
+  pkey_path: /google/DJ-DS-workflow-nonprod-7f7d936fff73_INT.json
+  ame:
+    #spreadsheet_id: 1NRFI-RQpl1D3qPGPRdqTOevrqHc6QZbRmoFHDBJypZc
+    #spreadsheet_id: 1DfYENs3DnmlSDpLMwy7fqtEdOUw8rrcnu-taEeL-zdM
+    # AME MASTER Template
+    spreadsheet_id: 1KCj8YDM3XyP5G_i7ebYsfqdQQsVHdc2dPPsGuHgM0qk
+    sheet_name: Signal Reporting
+    sheet_name_signal: Signal Reporting
+    sheet_name_factiva: FQ Reporting
+
+  query_reporting:
+    ame:
+      daily_tasks_spreadsheet_id: 1KCj8YDM3XyP5G_i7ebYsfqdQQsVHdc2dPPsGuHgM0qk
+      daily_tasks_sheet_name: Task Created Reporting
+  lists_profile_job:
+    #spreadsheet_id: 1XhPRvU6mn7z0kQ6-Sdq12LMoy5j0sdgzcnreCfIV-90
+    spreadsheet_id: 1XwwiZJl2BYlAzuMgJ5OhgjoAx4oCUSz0r12sbndKTvI
+    sheet_name: Master
+    range: A1:Q1000
+    cols: "taskProfileKey,monitoringPriority,taskGroup,taskPriority,jurisdiction,source,specialListReference,urls,snapshot,action,lastUpdateDate,pageCount,lastChecked,lastManualChecked,notes,frequency,active"
+  lists_reporting:
+    #spreadsheet_id: 1XhPRvU6mn7z0kQ6-Sdq12LMoy5j0sdgzcnreCfIV-90
+    spreadsheet_id: 1XwwiZJl2BYlAzuMgJ5OhgjoAx4oCUSz0r12sbndKTvI
+    sheet_name_qarchive: QArchive
+    sheet_name_last_checked:  Master
+    sheet_name_version_log: Version Log
+    sheet_name: L/O  # For legacy
 process:
-  ame-signal:
+  ame_factiva:
     reporting:
       columns:
         Editor: user
@@ -7,32 +86,71 @@ process:
         Category: category
         Country: country
         Task Creation Date/Time: createTime
+        Month: month
+        FQ Search Date: querySearchDate
+        Covered: result
+        Status: result
+        Article count: articleCount
+        Accession Numbers: acessionNumbers
+        Priority: taskKey
         Task ID: taskId
         Claim Date: claimTime
         Completed Date: _current_date
-      header:
-        startRowIndex: 0
-        startColumnIndex: 0
-google:
-  api:
-    credentials: client_secret.json
-  reporting:
-    retry-policy:
-      max-retries: 3
-      fixed-backoff: 1000
-    first-sheet:
-      spreadsheetId: 1A-C_yPt34w3fX2ZUxveH2qpPoiCVDQ7L7a9MdwXvCBY
-      sheetName: Class Data
-      headerOffSet:
-          start-row-index: 1
-          end-row-index: 1
-          start-column-index: 0
+  ame_signal:
+    reporting:
       columns:
         Editor: user
+        Entity name: entityName
         Language: language
         Category: category
         Country: country
         Task Creation Date/Time: createTime
+        Status: result
+        Article count: articleCount
+        Accession Numbers: articleList
+        Accession Numbers(ES): articleListES
+        Article count(ES): articleESCount
+        Accession Numbers(Class): articleListNoES
+        Article count(Class): articleNoESCount
+        Priority: taskKey
         Task ID: taskId
         Claim Date: claimTime
         Completed Date: _current_date
+  lists_process:
+    reporting:
+      lists_qarchive:
+        columns:
+          Editor: editor
+          Status: status
+          Frequency: frequency
+          Task Group: taskGroup
+          Status Timestamp: statusTimestamp
+          Timestamp Creation: timestampCreation
+          Task ID: taskID
+          Lastest Changes: latestChanges
+      lists_last_checked:
+        columns:
+          Profile Key:  taskProfileKey
+          Last Update Date: lastUpdateDate
+          Page Count: pageCount
+          Last Checked (name and timestamp): lastChecked
+          Notes: notes
+      lists_version_log:
+        columns:
+          Frequency and Date: frequencyAndDate
+          Completed:  completionStatus
+          Completion Time Stamp: completionTimestamp
+          User: user
+          Check and Timestamp: checkTimestamp
+
+query_reporting:
+  ame:
+    daily_tasks:
+      columns:
+        Day: day
+        Process: process
+        Language: language
+        Total Tasks: totalTasks
+        Total Articles: totalArticles
+        Control Init Timestamp:  initEpochMilli
+        Control End Timestamp: endEpochMilli

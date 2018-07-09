@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "dj-adapter",
+  "private_key_id": "f0b67bbc85ac4efb3a28e7804e6cce4f1cb74dfe",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDZfRwdxL97ottv\njI4WFBECcnCF5wzO91mMldYHUBLD7w0AQtCGo2k/h0/3c9T0FO3VlKmFzwyoLu6K\nqmbw5/ThVzzYCRdqnhkz/f0Ovu41CBTM1YVVwEEXdw2BwoNdRXVEoVTU9bUml0un\nNxC0ZBF3ymp17XrGgInzAC5/MfeI/R1qLzQ3qLHY6VO3EFe2sL/WOTYsaymkPZkr\nXTP5MMJSw3dzyM2TIu63oPu5ZxyBeDp2oNGaNPt3XT+InsKOpS83bwBHfpFYlRMX\naDI+n4SBwJHXWHB9P08LiG1MK7SmYqifXcvlaAk0JhkNcnZ9drCJ+s+gTr6ihBTk\nTqKCrk4TAgMBAAECggEAdcJdH+0w9OOoRwzmviOdViLatFX3RHT/grR6j7kWgAqG\nkpaay9vdF+3PKaAJNSPD5zo4U+BY7ROES4aaeGRP3lda9WpuyGbUJKeohnxxBDvc\n70/JgzW2yNrIcHL+p9j89u0XvrtPm5ad+utA2zu3jZIG9NVh/esJRo7ZnjtS2VOb\nctrbACuKdCv/Giegui014PVO5qDS+H/5Gd9yKV2LQPIbFA2bXJxFUaHzjQMmfsm/\nnctXnttBrcmaWr7Q303MivDefmQ+HUSaKN64jGiOU3hsB7ojDcGcy6qYvpTmioMA\nHQlPboK/p4Z2HS1Y0y++8ngxTMlMrhLZnD7YBxuz8QKBgQD/OAlTLitUJ/086hWR\nuF97O17bmnIpGzZ5x+q4cR3XxE99kde9MuqHj+Akn0GPGMPylavM9QEO6EV+zqq8\nNiSTn1Rkq6fEl8tlq1ZijRLveBXDpGcX+EEQbLGIOLspXotkRipJulzEpBCIQ+3c\nN+S8gkiFM2rTslvM+ID83Xgp+QKBgQDaJ4MJ3rKcP54+n2Tu0+8NSMgS3/Js72vH\nlYoaGoMfjJ41YpbwktavgErp6P2RJX5v+q0q87AxqiFILDKpiF1RA7H9aybLtAyj\nO2yfQXWmWD9Srn5x6E7NipB66n5lCNlKKbTQgnrv4RQaijk0ruFusYrFubJhgLE9\nYzREyyObawKBgQDAn1NyYzsyhgf8TJRA6g2uXY3nYrbczXwdB8TgtgcXDUQNeuCA\nHIikDfPW0BfT35YsZchHpXbKAIZLAcIc0SRkAnHYlTHHD+Xkcx98vArZkCGlClUA\n406ADfkj3eVsgL3lzYsnIC/Z/hW4MsS4W7sYh6AiYD81Tb05gykfMCv8SQKBgQCg\nHWHzC42iWpslsU2ecNTCtkmKeO3wgGVlzl7XO+BDdqzj1+Ga3ttNYmcZeVUqhA9h\n1uXkYYlPWmQlGbNxdNGw1Xp82nlWB2dDIyldVeko1xpa8BGEPxIfj/TtElEEjNMW\nuLeqViovB87+j7be8QAqg4qsBthi8dakjLxfRY1z0wKBgBwITLDV92dnVfyl2pZF\ncVF/JJUsnuGAAuWt4UvsMxiv9rjpI3of0pnmNF4FaHcEo4L/pz6zd85WEbJX530r\nEmsaEuXt6xiSQiqRpyeggt7xMikRfkI+Sk5ReOb1Juk5gqOj8KaYlkDLMy3wZ9eb\nBargEDeQo0VBK4RbOfN3ZCMW\n-----END PRIVATE KEY-----\n",
+  "client_email": "djadapter-sheets@dj-adapter.iam.gserviceaccount.com",
+  "client_id": "114804954679408146168",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/djadapter-sheets%40dj-adapter.iam.gserviceaccount.com"
+}
