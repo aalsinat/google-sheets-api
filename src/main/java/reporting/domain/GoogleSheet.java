@@ -14,6 +14,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static reporting.domain.Range.RangeBuilder;
 import static reporting.utils.A1NotationHelper.getNotationFromSheetNameAndGridRange;
 import static reporting.utils.GoogleSheetsUtils.mergeMultipleValueRanges;
 
@@ -35,10 +36,12 @@ public class GoogleSheet {
 	@Autowired
 	public GoogleSheet(String spreadSheetId, Sheet value, GoogleSheetsRepository repository) throws IOException {
 		logger.debug("A new instance of GoogleSheet with id {} and title '{}' is being created. ",
-		             value.getProperties()
-		                  .getSheetId(),
-		             value.getProperties()
-		                  .getTitle());
+		             value
+				             .getProperties()
+				             .getSheetId(),
+		             value
+				             .getProperties()
+				             .getTitle());
 		this.value = Objects.requireNonNull(value);
 		this.repository = repository;
 		this.spreadSheetId = spreadSheetId;
@@ -85,8 +88,9 @@ public class GoogleSheet {
 	 */
 	public Integer getSheetId() {
 		if (this.isPresent()) {
-			return value.getProperties()
-			            .getSheetId();
+			return value
+					.getProperties()
+					.getSheetId();
 		}
 		throw new NullPointerException("getSheetId: Google sheet is empty, so there is no identifier to be returned.");
 	}
@@ -98,8 +102,9 @@ public class GoogleSheet {
 	 */
 	public String getSheetTitle() {
 		if (this.isPresent()) {
-			return value.getProperties()
-			            .getTitle();
+			return value
+					.getProperties()
+					.getTitle();
 		}
 		throw new NullPointerException("getSheetTitle: Google sheet is empty, so there is no title to be returned.");
 	}
@@ -127,11 +132,13 @@ public class GoogleSheet {
 		final String headerRange = header.getRangeInA1Notation(this.getSheetTitle());
 		final Optional<List<Object>> headerTitles;
 		try {
-			headerTitles = repository.getRangeWithRetry(spreadSheetId, headerRange)
-			                         .thenApply(response -> response.getValues()
-			                                                        .stream()
-			                                                        .findFirst())
-			                         .get();
+			headerTitles = repository
+					.getRangeWithRetry(spreadSheetId, headerRange)
+					.thenApply(response -> response
+							.getValues()
+							.stream()
+							.findFirst())
+					.get();
 			logger.debug(String.format("Fetched header information: %s", headerTitles.get()));
 			headerTitles.ifPresent(titles -> header.setColumns(titles));
 		} catch (InterruptedException e) {
@@ -148,9 +155,35 @@ public class GoogleSheet {
 	 * @return {@code Optional} value or empty() for none
 	 */
 	public Optional<Integer> getRowCount() {
-		return (isPresent()) ? Optional.of(value.getProperties()
-		                                        .getGridProperties()
-		                                        .getRowCount()) : Optional.empty();
+		return (isPresent()) ?
+		       Optional.of(value
+				                   .getProperties()
+				                   .getGridProperties()
+				                   .getRowCount()) :
+		       Optional.empty();
+	}
+
+	public CompletableFuture<Integer> getFilledRowsCount(List<String> keyColumns) throws IOException {
+
+		final List<String> ranges = keyColumns.stream().map(column -> header
+				.getColumnRangeInA1Notation(column, this.getSheetTitle()))
+		                                      .filter(Objects::nonNull)
+		                                      .collect(Collectors.toList());
+
+		final CompletableFuture<BatchGetValuesResponse> targetedColumnsFuture = repository
+				.getMultipleRangesWithRetry(spreadSheetId, ranges);
+
+		final CompletableFuture<Integer> rowCountResponse = targetedColumnsFuture.thenApply(response -> {
+			// If there are no results after the request
+			if (isTargetedColumnsEmpty(response)) return 0;
+
+			List<String> targetedValues = mergeMultipleValueRanges(response)
+					.concat("|")
+					.get();
+			logger.info("Targeted values: {}", targetedValues.size());
+			return targetedValues.size();
+		});
+		return rowCountResponse;
 	}
 
 	/**
@@ -159,9 +192,12 @@ public class GoogleSheet {
 	 * @return {@code Optional} value or empty() for none
 	 */
 	public Optional<Integer> getColumnCount() {
-		return (isPresent()) ? Optional.of(value.getProperties()
-		                                        .getGridProperties()
-		                                        .getColumnCount()) : Optional.empty();
+		return (isPresent()) ?
+		       Optional.of(value
+				                   .getProperties()
+				                   .getGridProperties()
+				                   .getColumnCount()) :
+		       Optional.empty();
 	}
 
 	/**
@@ -202,16 +238,18 @@ public class GoogleSheet {
 	 */
 	public CompletableFuture<Optional<Integer>> findRowIdByColumnValues(Map<String, Object> criteria) throws IOException {
 		// TODO: Create a new entity for search criteria or query conditions
-		final List<String> ranges = criteria.keySet()
-		                                    .stream()
-		                                    .map(column -> header.getColumnRangeInA1Notation(column, this.getSheetTitle()))
-		                                    .filter(Objects::nonNull)
-		                                    .collect(Collectors.toList());
+		final List<String> ranges = criteria
+				.keySet()
+				.stream()
+				.map(column -> header.getColumnRangeInA1Notation(column, this.getSheetTitle()))
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
 
-		String searchValue = criteria.values()
-		                             .stream()
-		                             .map(Object::toString)
-		                             .collect(Collectors.joining("|"));
+		String searchValue = criteria
+				.values()
+				.stream()
+				.map(Object::toString)
+				.collect(Collectors.joining("|"));
 
 		final CompletableFuture<BatchGetValuesResponse> targetedColumnsFuture = repository.getMultipleRangesWithRetry(
 				spreadSheetId,
@@ -222,17 +260,21 @@ public class GoogleSheet {
 			// If there are no results after the request
 			if (isTargetedColumnsEmpty(response)) return Optional.empty();
 
-			List<String> targetedValues = mergeMultipleValueRanges(response).concat("|")
-			                                                                .get();
+			List<String> targetedValues = mergeMultipleValueRanges(response)
+					.concat("|")
+					.get();
 
 			// TODO: Try to do a reverse loop on searching for the row, starting from targetedValues.size() through start row index
-			OptionalInt rowId = IntStream.range(0, targetedValues.size())
-			                             .filter(index -> targetedValues.get(index)
-			                                                            .equals(searchValue))
-			                             .findFirst();
+			OptionalInt rowId = IntStream
+					.range(0, targetedValues.size())
+					.filter(index -> targetedValues
+							.get(index)
+							.equals(searchValue))
+					.findFirst();
 			return rowId.isPresent() ?
-			       Optional.of(rowId.getAsInt() + header.getRange()
-			                                            .getStartRowIndex() + 1) :
+			       Optional.of(rowId.getAsInt() + header
+					       .getRange()
+					       .getStartRowIndex() + 1) :
 			       Optional.empty();
 		});
 
@@ -247,8 +289,9 @@ public class GoogleSheet {
 	 */
 	public Optional<List<Object>> findRowByColumnValues(
 			Map<String, Object> criteria) throws IOException, ExecutionException, InterruptedException {
-		Optional<Integer> rowId = this.findRowIdByColumnValues(criteria)
-		                              .get();
+		Optional<Integer> rowId = this
+				.findRowIdByColumnValues(criteria)
+				.get();
 		if (!rowId.isPresent()) {
 			return Optional.empty();
 		}
@@ -256,11 +299,12 @@ public class GoogleSheet {
 	}
 
 	private boolean isTargetedColumnsEmpty(BatchGetValuesResponse targetedColumns) {
-		if (targetedColumns.getValueRanges()
-		                   .stream()
-		                   .map(ValueRange::getValues)
-		                   .filter(Objects::nonNull)
-		                   .count() == 0)
+		if (targetedColumns
+				.getValueRanges()
+				.stream()
+				.map(ValueRange::getValues)
+				.filter(Objects::nonNull)
+				.count() == 0)
 			return true;
 		return false;
 	}
@@ -298,9 +342,10 @@ public class GoogleSheet {
 	private ValueRange appendRow(List<Object> rowValues) throws IOException {
 		ValueRange appendRow = new ValueRange().setValues(Collections.singletonList(rowValues));
 		final String appendRange = header.getStartRangeInA1Notation(getSheetTitle());
-		return repository.append(spreadSheetId, appendRange, appendRow)
-		                 .getUpdates()
-		                 .getUpdatedData();
+		return repository
+				.append(spreadSheetId, appendRange, appendRow)
+				.getUpdates()
+				.getUpdatedData();
 	}
 
 	/**
@@ -312,9 +357,11 @@ public class GoogleSheet {
 	private CompletableFuture<ValueRange> appendRowWithRetry(List<Object> rowValues) throws IOException {
 		ValueRange appendRow = new ValueRange().setValues(Collections.singletonList(rowValues));
 		final String appendRange = header.getStartRangeInA1Notation(getSheetTitle());
-		return repository.appendWithRetry(spreadSheetId, appendRange, appendRow)
-		                 .thenApply(response -> response.getUpdates()
-		                                                .getUpdatedData());
+		return repository
+				.appendWithRetry(spreadSheetId, appendRange, appendRow)
+				.thenApply(response -> response
+						.getUpdates()
+						.getUpdatedData());
 	}
 
 	/**
@@ -326,8 +373,9 @@ public class GoogleSheet {
 		// Create a new row with new values to be updated
 		List<Object> newRowValues = row.merge(header);
 		logger.debug("Async request to append row with row values {}", newRowValues);
-		return this.appendRowWithRetry(newRowValues)
-		           .thenApply(Function.identity());
+		return this
+				.appendRowWithRetry(newRowValues)
+				.thenApply(Function.identity());
 	}
 
 	/**
@@ -335,26 +383,66 @@ public class GoogleSheet {
 	 *
 	 * @param rows a list of rows, each one containing columns and their values
 	 */
-	public CompletableFuture<List<ValueRange>> appendRows(List<Row> rows) throws IOException {
+	public CompletableFuture<List<ValueRange>> appendRows(
+			List<Row> rows) throws IOException, ExecutionException, InterruptedException {
 		final Sheets.Spreadsheets.Values.BatchUpdate batchUpdate;
-		final String appendRange = String.format("%s!%s", getSheetTitle(), header.getStartRangeInA1Notation());
-		final List<ValueRange> newRows = rows.stream()
-		                                     .map(row -> row.merge(header))
-		                                     .map(row -> new ValueRange().setValues(Collections.singletonList(row))
-		                                                                 .setRange(appendRange))
-		                                     .collect(Collectors.toList());
+
+		final Integer rowsCount = this.getFilledRowsCount(Arrays.asList("Id")).get();
+
+		final BatchUpdateSpreadsheetResponse appendDimension = repository
+				.appendDimension(spreadSheetId, this.getSheetId(), rows.size())
+				.get();
+
+		final List<ValueRange> newRows = IntStream
+				.range(0, rows.size())
+				.mapToObj(rowIndex -> getLocatedRow(rows.get(rowIndex),
+				                                    rowIndex + rowsCount))
+				.collect(Collectors.toList());
+
 		batchUpdate = repository.batchUpdate(spreadSheetId,
-		                                     new BatchUpdateValuesRequest().setData(newRows)
-		                                                                   .setValueInputOption("USER_ENTERED")
-		                                                                   .setResponseDateTimeRenderOption(
-				                                                                   "FORMATTED_STRING")
-		                                                                   .setIncludeValuesInResponse(true));
-		return repository.getExecutor()
-		                 .getWithRetry(ctx -> batchUpdate.execute()
-		                                                 .getResponses()
-		                                                 .stream()
-		                                                 .map(response -> response.getUpdatedData())
-		                                                 .collect(Collectors.toList()));
+		                                     new BatchUpdateValuesRequest()
+				                                     .setData(newRows)
+				                                     .setValueInputOption("USER_ENTERED")
+				                                     .setResponseDateTimeRenderOption(
+						                                     "FORMATTED_STRING")
+				                                     .setIncludeValuesInResponse(true));
+		return repository
+				.getExecutor()
+				.getWithRetry(ctx -> batchUpdate
+						.execute()
+						.getResponses()
+						.stream()
+						.map(response -> response.getUpdatedData())
+						.collect(Collectors.toList()));
+	}
+
+	/**
+	 * Support method for creating {@link ValueRange}s based on rows and a relative position from header.
+	 *
+	 * @param row      {@code Row} containing all data to be added to {@code ValueRange}
+	 * @param position Relative position from header
+	 * @return a new {@code ValueRange} containing provided values and range
+	 */
+	private ValueRange getLocatedRow(Row row, Integer position) {
+		GridRange headerRange = header.getRange();
+		GridRange rowRange = new GridRange()
+				.setStartRowIndex(headerRange.getStartRowIndex() + 1 + position)
+				.setStartColumnIndex(headerRange.getStartColumnIndex());
+
+		String range = new RangeBuilder(this.getSheetTitle(),
+		                                header
+
+				                                .getRange()
+				                                .getStartRowIndex() + 1 + position)
+				.withStartingColumn(header
+						                    .getRange()
+						                    .getStartColumnIndex())
+				.build()
+				.getRangeInA1Notation();
+		//Range range = new Range(rowRange, this.getSheetTitle());
+		return new ValueRange()
+				.setValues(Collections.singletonList(row.merge(header)))
+				.setRange(range);
 	}
 
 	/**
@@ -386,7 +474,7 @@ public class GoogleSheet {
 
 			final GridRange updateGridRange = new GridRange().setStartRowIndex(rowId.get())
 			                                                 .setStartColumnIndex(header.getRange()
-			                                                            .getStartColumnIndex())
+			                                                                            .getStartColumnIndex())
 			                                                 .setEndRowIndex(rowId.get());
 			final String updateRange = getNotationFromSheetNameAndGridRange(getSheetTitle(), updateGridRange);
 			// Blocking call for searching existing row values

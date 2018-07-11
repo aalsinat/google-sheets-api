@@ -7,9 +7,7 @@ import org.slf4j.LoggerFactory;
 import reporting.retry.RetryExecutor;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -153,7 +151,10 @@ public class GoogleSheetsRepository {
 	                                                               String range,
 	                                                               ValueRange row) throws IOException {
 		return executor.getWithRetry(context -> {
-			logger.debug("Append API method with values {} to range {}. Attempt #{}.", row.getValues(), range, context.getRetryCount() + 1);
+			logger.debug("Append API method with values {} to range {}. Attempt #{}.",
+			             row.getValues(),
+			             range,
+			             context.getRetryCount() + 1);
 			return append(spreadsheetId, range, row);
 		});
 	}
@@ -245,5 +246,17 @@ public class GoogleSheetsRepository {
 		return new GoogleSpreadsheet(value.spreadsheets()
 		                                  .get(spreadSheetId)
 		                                  .execute(), this);
+	}
+
+
+	public CompletableFuture<BatchUpdateSpreadsheetResponse> appendDimension(String spreadSheetId, Integer sheetId,
+	                                                                         Integer dimension) throws IOException {
+		final AppendDimensionRequest appendDimension = new AppendDimensionRequest().setDimension("ROWS")
+		                                                                           .setLength(dimension)
+		                                                                           .setSheetId(sheetId);
+		final List requests = Arrays.asList(new Request().setAppendDimension(appendDimension));
+		final BatchUpdateSpreadsheetRequest updateRequest = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+		final Sheets.Spreadsheets.BatchUpdate rows = value.spreadsheets().batchUpdate(spreadSheetId, updateRequest);
+		return executor.getWithRetry(ctx -> rows.execute());
 	}
 }

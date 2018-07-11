@@ -131,6 +131,24 @@ public class Row {
 		}
 	}
 
+	public List<Cell> findCellsByColumnNames(List<String> columnNames) {
+		return columnNames.stream().map(columnName -> this.findCellByColumnName(columnName, Cell::empty))
+		                  .collect(Collectors.toList());
+	}
+
+
+	/**
+	 * Returns a list of {@linl Cell}s containing provided column names.
+	 *
+	 * @param columnNames   name of the column of the cell to be found
+	 * @param defaultValue function that provides a default value in case that none of the cells contains columnName
+	 * @return list of cells containing provided column names
+	 */
+	public List<Cell> findCellsByColumnNames(List<String> columnNames, Function<String, Cell> defaultValue) {
+		return columnNames.stream().map(columnName -> this.findCellByColumnName(columnName, defaultValue))
+		                  .collect(Collectors.toList());
+	}
+
 	/**
 	 * Returns first cell containing provided value.
 	 *
@@ -161,13 +179,14 @@ public class Row {
 	 * @return
 	 */
 	public List<Object> merge(Header header) {
-		return IntStream.range(header.getRange().getStartColumnIndex(), header.size())
-		                .mapToObj(header::getColumnByPosition)
-		                .filter(Optional::isPresent)
-		                .map(columnName -> findCellByColumnName(columnName.get(), Cell::empty))
-		                .map(Cell::getValue)
-		                .map(Object::toString)
-		                .collect(Collectors.toList());
+		return IntStream
+				.range(header.getRange().getStartColumnIndex(), header.getRange().getStartColumnIndex() + header.size())
+				.mapToObj(header::getColumnByPosition)
+				.filter(Optional::isPresent)
+				.map(columnName -> findCellByColumnName(columnName.get(), Cell::empty))
+				.map(Cell::getValue)
+				.map(Object::toString)
+				.collect(Collectors.toList());
 	}
 
 	/**

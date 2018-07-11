@@ -38,7 +38,7 @@ public class Header {
 	}
 
 	public String getRangeInA1Notation(String sheetName) {
-		return String.format("%s!%s", sheetName, getA1Notation(range));
+		return String.format(RANGE_NOTATION, sheetName, getA1Notation(range));
 	}
 
 	public String getRangeInA1Notation() {

@@ -2,17 +2,18 @@ package reporting.domain;
 
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 
 public class Cell {
 	private static final String EMPTY_STRING = "";
-	private final Map.Entry<String, Object> value;
+	private final Entry<String, Object> value;
 
 	public Cell(String column, Object value) {
 		this.value = new AbstractMap.SimpleEntry<>(column, value);
 	}
 
-	public Cell(Map.Entry<String, Object> value) {
+	public Cell(Entry<String, Object> value) {
 		this.value = value;
 	}
 
@@ -32,6 +33,8 @@ public class Cell {
 	public Object getValue() {
 		return value.getValue();
 	}
+
+	public Entry<String, Object> getEntry() { return this.value; }
 
 	@Override
 	public boolean equals(Object o) {

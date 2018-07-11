@@ -31,7 +31,7 @@ public class SheetsApplicationTests {
 	final String BENCHMARK_TWO = "1fpDiSdTbq03udvYj1j3Y4DiYKszpAPe03IqgWejgZwY";
 	final String AME_COPY_PROD = "1J8fL48DX6bXTO8FPtb032genJvGQf455fI7lqNDBnJc";
 
-	final String SHEET_ONE = "Benchmark_1";
+	final String SHEET_ONE = "Benchmark1";
 	final String SHEET_TWO = "Benchmark2";
 	final String SHEET_AME = "Union";
 
@@ -188,8 +188,10 @@ public class SheetsApplicationTests {
 			IntStream.range(1, 300).forEach(index -> {
 				Row row = this.mockingRow(index);
 				try {
-					sheetOne.appendRow(row).thenAccept(valueRange -> logger.info("Appended a new row to Sheet1 -> {}", valueRange.getValues()));
-					sheetTwo.appendRow(row).thenAccept(valueRange -> logger.info("Appended a new row to Sheet2 -> {}", valueRange.getValues()));
+					sheetOne.appendRow(row)
+					        .thenAccept(valueRange -> logger.info("Appended a new row to Sheet1 -> {}", valueRange.getValues()));
+					sheetTwo.appendRow(row)
+					        .thenAccept(valueRange -> logger.info("Appended a new row to Sheet2 -> {}", valueRange.getValues()));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -208,7 +210,8 @@ public class SheetsApplicationTests {
 			IntStream.range(1, 300).forEach(index -> {
 				Row row = this.mockingAmeRow(index);
 				try {
-					sheet.appendRow(row).thenAccept(valueRange -> logger.info("Appended a new row to AME-> {}", valueRange.getValues())).get();
+					sheet.appendRow(row)
+					     .thenAccept(valueRange -> logger.info("Appended a new row to AME-> {}", valueRange.getValues())).get();
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (InterruptedException e) {
@@ -230,7 +233,8 @@ public class SheetsApplicationTests {
 			IntStream.range(1, 300).forEach(index -> {
 				Row row = this.mockingAmeRow(index);
 				try {
-					sheet.appendRow(row).thenAccept(valueRange -> logger.info("Appended a new row to AME-> {}", valueRange.getValues()));
+					sheet.appendRow(row)
+					     .thenAccept(valueRange -> logger.info("Appended a new row to AME-> {}", valueRange.getValues()));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -239,6 +243,18 @@ public class SheetsApplicationTests {
 		}).get();
 		logger.info(s);
 		Thread.sleep(1800000);
+	}
+
+	@Test
+	public void appendingMultipleRows() throws IOException, ExecutionException, InterruptedException {
+		GoogleSheet sheet = service.getSheetByName(BENCHMARK_ONE, SHEET_ONE).setHeader(1, 2);
+		logger.info("Row count: {}", sheet.getRowCount().get());
+		List rowsToAppend = new ArrayList<Row>();
+		IntStream.range(1, 100).mapToObj(this::mockingRow).forEach(rowsToAppend::add);
+		final CompletableFuture appendRows = sheet.appendRows(rowsToAppend);
+		final Object result = appendRows.get();
+		logger.info("Results: {}", result);
+
 	}
 
 }
