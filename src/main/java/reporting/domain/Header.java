@@ -59,6 +59,7 @@ public class Header {
 		return String.format(RANGE_NOTATION, sheetName, getStartRangeInA1Notation());
 	}
 
+
 	public String getColumnRangeInA1Notation(String columnName) {
 		final Integer columnIndex = valuesMap.get(columnName);
 		if (columnIndex == null) return null;

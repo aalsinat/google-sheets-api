@@ -1,7 +1,7 @@
 package reporting.domain;
 
-import reporting.utils.MultiValuedMapCollector;
 import org.springframework.util.MultiValueMap;
+import reporting.utils.MultiValuedMapCollector;
 
 import java.util.*;
 import java.util.function.Function;
@@ -22,6 +22,10 @@ public class Row {
 		this.additionPolicy = builder.additionPolicy;
 		this.definition = builder.definition;
 		this.values = builder.values;
+	}
+
+	public static RowBuilder builder() {
+		return new RowBuilder();
 	}
 
 	/**
@@ -140,7 +144,7 @@ public class Row {
 	/**
 	 * Returns a list of {@linl Cell}s containing provided column names.
 	 *
-	 * @param columnNames   name of the column of the cell to be found
+	 * @param columnNames  name of the column of the cell to be found
 	 * @param defaultValue function that provides a default value in case that none of the cells contains columnName
 	 * @return list of cells containing provided column names
 	 */

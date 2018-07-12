@@ -7,7 +7,10 @@ import org.slf4j.LoggerFactory;
 import reporting.retry.RetryExecutor;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -168,11 +171,26 @@ public class GoogleSheetsRepository {
 	 *                      will be updated, etc.
 	 * @return
 	 */
-	public Sheets.Spreadsheets.Values.BatchUpdate batchUpdate(String spreadsheetId,
-	                                                          BatchUpdateValuesRequest request) throws IOException {
+	public BatchUpdateValuesResponse batchUpdate(String spreadsheetId,
+	                                             BatchUpdateValuesRequest request) throws IOException {
 		return value.spreadsheets()
 		            .values()
-		            .batchUpdate(spreadsheetId, request);
+		            .batchUpdate(spreadsheetId, request)
+		            .execute();
+	}
+
+	/**
+	 * Asynchronous and retry version of {@code batchUpdate} method.
+	 *
+	 * @param spreadsheetId identifier for a particular spreadsheet
+	 * @param request       List of values to be updated
+	 */
+	public CompletableFuture<BatchUpdateValuesResponse> batchUpdateWithRetry(String spreadsheetId,
+	                                                                         BatchUpdateValuesRequest request) {
+		return executor.getWithRetry(ctx -> {
+			logger.debug("Batch Update API method with values {}. Attempt #{}.", spreadsheetId, request.getData());
+			return batchUpdate(spreadsheetId, request);
+		});
 	}
 
 
@@ -201,7 +219,6 @@ public class GoogleSheetsRepository {
 	 * @param spreadsheetId identifier for a particular spreadsheet
 	 * @param range         range to be updated
 	 * @param row           value of the cells of the row
-	 * @return an update operation ready to be executed
 	 */
 	public CompletableFuture<UpdateValuesResponse> updateWithRetry(String spreadsheetId, String range,
 	                                                               ValueRange row) throws IOException {
@@ -249,10 +266,17 @@ public class GoogleSheetsRepository {
 	}
 
 
+	/**
+	 * Adds specified number of rows at the end of the provided sheet.
+	 *
+	 * @param spreadSheetId Identifier for the spreadsheet.
+	 * @param sheetId       Identifier for the sheet.
+	 * @param length        Number of rows to be added.
+	 */
 	public CompletableFuture<BatchUpdateSpreadsheetResponse> appendDimension(String spreadSheetId, Integer sheetId,
-	                                                                         Integer dimension) throws IOException {
+	                                                                         Integer length) throws IOException {
 		final AppendDimensionRequest appendDimension = new AppendDimensionRequest().setDimension("ROWS")
-		                                                                           .setLength(dimension)
+		                                                                           .setLength(length)
 		                                                                           .setSheetId(sheetId);
 		final List requests = Arrays.asList(new Request().setAppendDimension(appendDimension));
 		final BatchUpdateSpreadsheetRequest updateRequest = new BatchUpdateSpreadsheetRequest().setRequests(requests);

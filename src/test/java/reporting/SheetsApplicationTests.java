@@ -2,6 +2,7 @@ package reporting;
 
 import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import org.apache.http.client.config.RequestConfig;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,6 +21,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -250,8 +252,8 @@ public class SheetsApplicationTests {
 		GoogleSheet sheet = service.getSheetByName(BENCHMARK_ONE, SHEET_ONE).setHeader(1, 2);
 		logger.info("Row count: {}", sheet.getRowCount().get());
 		List rowsToAppend = new ArrayList<Row>();
-		IntStream.range(1, 100).mapToObj(this::mockingRow).forEach(rowsToAppend::add);
-		final CompletableFuture appendRows = sheet.appendRows(rowsToAppend);
+		IntStream.range(1, 5000).mapToObj(this::mockingRow).forEach(rowsToAppend::add);
+		final CompletableFuture appendRows = sheet.appendRows(rowsToAppend, Arrays.asList("Id"));
 		final Object result = appendRows.get();
 		logger.info("Results: {}", result);
 

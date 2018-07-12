@@ -1,7 +1,7 @@
 package reporting.domain;
 
-import reporting.service.ReportingPoliciesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import reporting.service.ReportingPoliciesService;
 
 public class RowTemplate {
 	private final ValidationPolicy validationPolicy;
@@ -14,9 +14,9 @@ public class RowTemplate {
 	}
 
 	public Row build() {
-		return new Row.RowBuilder().withValidationPolicy(validationPolicy)
-		                           .withFormattingPolicy(formattingPolicy)
-		                           .withAdditionPolicy(ReportingPoliciesService::isMetaVariableValue)
-		                           .build();
+		return Row.builder().withValidationPolicy(validationPolicy)
+		          .withFormattingPolicy(formattingPolicy)
+		          .withAdditionPolicy(ReportingPoliciesService::isMetaVariableValue)
+		          .build();
 	}
 }

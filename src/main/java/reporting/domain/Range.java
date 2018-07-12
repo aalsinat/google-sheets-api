@@ -10,7 +10,7 @@ public class Range {
 	private Integer endColumn;
 	private GridRange range;
 
-	private Range(RangeBuilder builder) {
+	private Range(Builder builder) {
 		this.sheetTitle = builder.sheetTitle;
 		this.startRow = builder.startRow;
 		this.endRow = builder.endRow;
@@ -22,6 +22,13 @@ public class Range {
 	private GridRange fromRange() {
 		return new GridRange().setStartRowIndex(this.startRow).setEndRowIndex(this.endRow)
 		                      .setStartColumnIndex(this.startColumn).setEndColumnIndex(this.endColumn);
+	}
+
+	/**
+	 * Returns a new instance of {@link Builder}
+	 */
+	public static Builder builder() {
+		return new Builder();
 	}
 
 	public String getRangeInA1Notation() {
@@ -72,7 +79,7 @@ public class Range {
 		return (div == 0) ? String.format("%s", small) : String.format("%s%s", big, small);
 	}
 
-	public static class RangeBuilder {
+	public static class Builder {
 		private String sheetTitle;
 		private Integer startRow;
 		private Integer endRow;
@@ -80,31 +87,45 @@ public class Range {
 		private Integer endColumn;
 		private GridRange range;
 
-		public RangeBuilder(String sheetTitle, GridRange range) {
+		public Builder() {
+		}
+
+		public Builder(String sheetTitle, GridRange range) {
 			this.range = range;
 		}
 
-		public RangeBuilder(String sheetTitle, Integer startRow) {
+		public Builder(String sheetTitle, Integer startRow) {
 			this.sheetTitle = sheetTitle;
 			this.startRow = startRow;
 		}
 
-		public RangeBuilder withEndingRow(Integer endRow) {
+
+		public Builder withSheetTitle(String sheetTitle) {
+			this.sheetTitle = sheetTitle;
+			return this;
+		}
+
+		public Builder withStartingRow(Integer startRow) {
+			this.startRow = startRow;
+			return this;
+		}
+
+		public Builder withEndingRow(Integer endRow) {
 			this.endRow = endRow;
 			return this;
 		}
 
-		public RangeBuilder withStartingColumn(Integer startColumn) {
+		public Builder withStartingColumn(Integer startColumn) {
 			this.startColumn = startColumn;
 			return this;
 		}
 
-		public RangeBuilder withEndingColumn(Integer endColumn) {
+		public Builder withEndingColumn(Integer endColumn) {
 			this.endColumn = endColumn;
 			return this;
 		}
 
-		public RangeBuilder withRange(GridRange range) {
+		public Builder withRange(GridRange range) {
 			this.range = range;
 			return this;
 		}
@@ -112,7 +133,7 @@ public class Range {
 		/**
 		 * Calls the private constructor of the Range class and passes itself as the argument.
 		 *
-		 * @return a {@code Range} instantiated with the parameters set by the {@code RangeBuilder}
+		 * @return a {@code Range} instantiated with the parameters set by the {@code Builder}
 		 */
 		public Range build() {
 			return new Range(this);

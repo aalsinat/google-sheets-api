@@ -1,7 +1,6 @@
 package reporting.domain;
 
 
-import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static reporting.domain.Range.RangeBuilder;
 import static reporting.utils.A1NotationHelper.getNotationFromSheetNameAndGridRange;
 import static reporting.utils.GoogleSheetsUtils.mergeMultipleValueRanges;
 
@@ -383,37 +381,51 @@ public class GoogleSheet {
 	 *
 	 * @param rows a list of rows, each one containing columns and their values
 	 */
-	public CompletableFuture<List<ValueRange>> appendRows(
-			List<Row> rows) throws IOException, ExecutionException, InterruptedException {
-		final Sheets.Spreadsheets.Values.BatchUpdate batchUpdate;
+	public CompletableFuture<List<ValueRange>> appendRows(List<Row> rows, List<String> keyColumns) throws IOException {
+		return this.appendRowsDimension(rows.size())
+		           .thenCombine(this.getFilledRowsCount(keyColumns), (appendDimensionResponse, count) -> count)
+		           .thenCompose(location -> {
+			           final BatchUpdateValuesRequest request = createBatchUpdateRequest(getValuesFromRows(rows, location));
+			           return repository.batchUpdateWithRetry(spreadSheetId, request)
+			                            .thenApply(this::getUpdatedDataFromUpdateValuesResponse);
+		           });
+	}
 
-		final Integer rowsCount = this.getFilledRowsCount(Arrays.asList("Id")).get();
+	public CompletableFuture<BatchUpdateSpreadsheetResponse> appendRowsDimension(Integer length) throws IOException {
+		return repository.appendDimension(spreadSheetId, this.getSheetId(), length);
+	}
 
-		final BatchUpdateSpreadsheetResponse appendDimension = repository
-				.appendDimension(spreadSheetId, this.getSheetId(), rows.size())
-				.get();
+	private List<ValueRange> getUpdatedDataFromUpdateValuesResponse(BatchUpdateValuesResponse response) {
+		return response.getResponses().stream()
+		               .map(UpdateValuesResponse::getUpdatedData)
+		               .collect(Collectors.toList());
+	}
 
-		final List<ValueRange> newRows = IntStream
-				.range(0, rows.size())
-				.mapToObj(rowIndex -> getLocatedRow(rows.get(rowIndex),
-				                                    rowIndex + rowsCount))
-				.collect(Collectors.toList());
+	/**
+	 * Support method for create a {@link BatchUpdateValuesRequest} request.
+	 *
+	 * @param values Values requested to be update
+	 * @return
+	 */
+	private BatchUpdateValuesRequest createBatchUpdateRequest(List<ValueRange> values) {
+		return new BatchUpdateValuesRequest()
+				.setData(values)
+				.setValueInputOption("USER_ENTERED")
+				.setResponseDateTimeRenderOption("FORMATTED_STRING")
+				.setIncludeValuesInResponse(true);
+	}
 
-		batchUpdate = repository.batchUpdate(spreadSheetId,
-		                                     new BatchUpdateValuesRequest()
-				                                     .setData(newRows)
-				                                     .setValueInputOption("USER_ENTERED")
-				                                     .setResponseDateTimeRenderOption(
-						                                     "FORMATTED_STRING")
-				                                     .setIncludeValuesInResponse(true));
-		return repository
-				.getExecutor()
-				.getWithRetry(ctx -> batchUpdate
-						.execute()
-						.getResponses()
-						.stream()
-						.map(response -> response.getUpdatedData())
-						.collect(Collectors.toList()));
+	/**
+	 * Support method for getting a {@code ValueRange} for every {@code Row}.
+	 *
+	 * @param rows
+	 * @param count
+	 * @return
+	 */
+	private List<ValueRange> getValuesFromRows(List<Row> rows, Integer count) {
+		return IntStream.range(0, rows.size())
+		                .mapToObj(index -> getRowValueWithLocation(rows.get(index), index + count))
+		                .collect(Collectors.toList());
 	}
 
 	/**
@@ -423,23 +435,13 @@ public class GoogleSheet {
 	 * @param position Relative position from header
 	 * @return a new {@code ValueRange} containing provided values and range
 	 */
-	private ValueRange getLocatedRow(Row row, Integer position) {
-		GridRange headerRange = header.getRange();
-		GridRange rowRange = new GridRange()
-				.setStartRowIndex(headerRange.getStartRowIndex() + 1 + position)
-				.setStartColumnIndex(headerRange.getStartColumnIndex());
-
-		String range = new RangeBuilder(this.getSheetTitle(),
-		                                header
-
-				                                .getRange()
-				                                .getStartRowIndex() + 1 + position)
-				.withStartingColumn(header
-						                    .getRange()
-						                    .getStartColumnIndex())
-				.build()
-				.getRangeInA1Notation();
-		//Range range = new Range(rowRange, this.getSheetTitle());
+	private ValueRange getRowValueWithLocation(Row row, Integer position) {
+		String range = Range.builder()
+		                    .withSheetTitle(this.getSheetTitle())
+		                    .withStartingRow(header.getRange().getStartRowIndex() + position + 1)
+		                    .withStartingColumn(header.getRange().getStartColumnIndex())
+		                    .build()
+		                    .getRangeInA1Notation();
 		return new ValueRange()
 				.setValues(Collections.singletonList(row.merge(header)))
 				.setRange(range);
